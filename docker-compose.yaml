@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  tor:
+    image: lncm/tor:0.4.5.7
+    container_name: tor
+    volumes:
+      - ${PWD}/config/data:/etc/tor
+      - ${PWD}/config/data:/var/lib/tor
+      - ${PWD}/config/run:/var/run/tor
+    restart: on-failure
+    stop_grace_period: 10m30s
+    ports:
+      - '9100:9100'
+  nginx:
+    image: nginx:stable-alpine
+    container_name: nginx
+    volumes:
+      - ${PWD}/config/nginx/nginx.conf:/etc/nginx/nginx.conf
+    environment:
+      - NGINX_PORT=9018
+    ports:
+      - '9018:80'
+  socat:
+    build: .
+    command: socat tcp4-LISTEN:9019,reuseaddr,fork,keepalive,bind=0.0.0.0 SOCKS4A:tor:${TOR_URL}:80,socksport=9100
+    ports:
+      - '9019'
